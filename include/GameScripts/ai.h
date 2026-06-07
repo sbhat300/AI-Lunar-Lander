@@ -15,13 +15,14 @@ class aiScript : public baseScript
 {
     public:
         NEAT population;
-        int populationSize = 50;
+        int populationSize = 300;
         std::vector<entity*> landers;
         entity* goal;
 
         std::random_device rd;
         std::mt19937 gen;
         std::uniform_real_distribution<float> distr;
+        int iteration = 0;
 
         bool evaluating = false;
 
@@ -107,7 +108,7 @@ class aiScript : public baseScript
                 }
                 if(!aliveLander)
                 {
-                    std::cout << "BEST SCORE: " << bestScore << std::endl;
+                    std::cout << "ITERATION " << ++iteration << ", BEST SCORE: " << bestScore << std::endl;
                     evaluating = false;
                     std::cout << serializeNetwork(population.genomes[bestId]) << std::endl;
                     if(worstScore < 0)

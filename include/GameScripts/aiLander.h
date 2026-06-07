@@ -34,14 +34,15 @@ class aiLanderScript : public baseScript
         };
         goalScript* goal;
         float score;
-        float angleWeight = 50.0f, velocityWeight = 100.0f, progressWeight = 500.0f, timePenalty = 0.4f, spinWeight = 30.0f;
-        float timeLimit = 7.0f;
-        float startDist, lastDist;
+        float angleWeight = 300.0f, velocityWeight = 500.0f, xProgressWeight = 1000.0f, yProgressWeight = 500.0f, timePenalty = 0.2f, spinWeight = 30.0f;
+        float successBonus = 3000.0f, failiurePenalty = 1000.0f;
+        float timeLimit = 20.0f;
         NEAT::genome* genome = nullptr;
         NEAT* population = nullptr;
         bool dead;
         std::vector<float> inputs;
         float elapsedTime;
+        float startXDist, startYDist, lastXDist, lastYDist;
 
         ray down, left, right; 
 
@@ -56,12 +57,13 @@ class aiLanderScript : public baseScript
                 float groundAngle = std::atan2(collisionNormal.y, collisionNormal.x) + (M_PI / 2.0f);
                 float orientationMatch = std::cos(parent->rotation - groundAngle);
                 float spin = parent->rigidbody.angularVelocity;
+                float goalDist = glm::distance(parent->position, goal->goal);
 
                 score -= velocityWeight * velocity;
                 score += angleWeight * orientationMatch;
                 score -= spinWeight * spin * spin;
 
-                if(velocitySq < 400.0f && orientationMatch > 0.9f && std::abs(spin) < 1.5f) score += 1000.0f;
+                if(velocitySq < 400.0f && orientationMatch > 0.9f && std::abs(spin) < 1.5f && goalDist < 60) score += successBonus;
 
                 parent->rigidbody.velocity = glm::vec2(0.0f, 0.0f);
                 parent->rigidbody.angularVelocity = 0.0f;
@@ -108,8 +110,10 @@ class aiLanderScript : public baseScript
 
         void preUpdate() override
         {
-            startDist = glm::distance(parent->position, goal->goal);
-            lastDist = 0;
+            startXDist = std::abs(parent->position.x - goal->goal.x);
+            startYDist = std::abs(parent->position.y - goal->goal.y);
+            lastXDist = 0;
+            lastYDist = 0;
         }
 
         void update() override
@@ -126,7 +130,7 @@ class aiLanderScript : public baseScript
                     parent->rigidbody.velocity = glm::vec2(0.0f, 0.0f);
                     parent->rigidbody.angularVelocity = 0.0f;
                     parent->collider.collide = false;
-                    score -= 1000.0f;
+                    score -= failiurePenalty;
                     genome->fitness = score;
                     dead = true;
                     return;
@@ -163,10 +167,13 @@ class aiLanderScript : public baseScript
                 parent->rigidbody.addForceAtPoint(-rightThrust * sinRot, rightThrust * cosRot, parent->collider.points[3].x, parent->collider.points[3].y);
                 parent->rigidbody.gravity(50);
                 
-                float dist = glm::distance(parent->position, goal->goal);
-                float progress = 1.0f - (dist / startDist);
-                score += progressWeight * (progress - lastDist) - timePenalty;
-                lastDist = progress;
+                float xDist = startXDist > 0 ? 1.0f - std::abs(parent->position.x - goal->goal.x) / startXDist : 1;
+                float yDist = startYDist > 0 ? 1.0f - std::abs(parent->position.y - goal->goal.y) / startYDist : 1;
+                float xReward = (xDist - lastXDist) * xProgressWeight;
+                float yReward = (yDist - lastYDist) * yProgressWeight;
+                score += xReward + yReward - timePenalty;
+                lastXDist = xDist;
+                lastYDist = yDist;
             }
         }
 

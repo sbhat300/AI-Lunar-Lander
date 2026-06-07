@@ -29,7 +29,7 @@ class landerScript : public baseScript
         };
         goalScript* goal;
         float score;
-        float angleWeight = 50.0f, velocityWeight = 100.0f, progressWeight = 500.0f, timePenalty = 0.3f;
+        float angleWeight = 50.0f, velocityWeight = 100.0f, progressWeight = 500.0f, timePenalty = 0.3f, spinWeight = 30.0f;
         float startDist, lastDist;
 
         void collisionCallback(entity* first, entity* second, glm::vec2 collisionNormal, float penetrationDepth, int contactPoints, glm::vec2 cp1, glm::vec2 cp2)
@@ -40,11 +40,14 @@ class landerScript : public baseScript
             float velocity = velocitySq / 40000;
             float groundAngle = std::atan2(collisionNormal.y, collisionNormal.x) + (M_PI / 2.0f);
             float orientationMatch = std::cos(parent->rotation - groundAngle);
+            float spin = parent->rigidbody.angularVelocity;
+            float goalDist = glm::distance(parent->position, goal->goal);
 
             score -= velocityWeight * velocity;
             score += angleWeight * orientationMatch;
+            score -= spinWeight * spin * spin;
 
-            if(velocitySq < 400.0f && orientationMatch > 0.9f) score += 1000.0f;
+            if(velocitySq < 400.0f && orientationMatch > 0.9f && std::abs(spin) < 1.5f && goalDist < 60) score += 1000.0f;
 
             std::cout << "Final score: " << score << std::endl;
         }

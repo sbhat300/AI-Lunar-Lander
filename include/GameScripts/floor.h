@@ -8,7 +8,7 @@
 class floorScript : public baseScript
 {
     public: 
-        entity* floorSegments[5];
+        entity* floorSegments[6];
         float rightSlopeVertices[16] = {
             1 / 2.0f,  2.0f, 1.0f, 1.0f,  // top right
             -1 / 2.0f,  1 / 2.0f, 0.0f, 1.0f,   // top left
@@ -94,7 +94,18 @@ class floorScript : public baseScript
             floorSegments[4]->addPolygonRigidbody(0, 0, 0, 0.2f);
             floorSegments[4]->polygonInstance.setLayer(7);
 
-            for(int i = 0; i < 5; i++)
+            floorSegments[5] = new entity("base", glm::vec2(-350, -350), glm::vec2(3000, 150), 0);
+            floorSegments[5]->addPolygon();
+            floorSegments[5]->polygonInstance.initRectangle();
+            floorSegments[5]->polygonInstance.polygonTexture = textureManager::defaultTexture;
+            floorSegments[5]->polygonInstance.shaderProgram = engine::shared.mainShaderID;
+            floorSegments[5]->polygonInstance.setColor(glm::vec3(0.9f, 0.9f, 0.9f));
+            floorSegments[5]->addPolygonCollider();
+            floorSegments[5]->collider.initRectangle();
+            floorSegments[5]->addPolygonRigidbody(0, 0, 0, 0.2f);
+            floorSegments[5]->polygonInstance.setLayer(7);
+
+            for(int i = 0; i < 6; i++)
             {
                 floorSegments[i]->collider.debugShaderProgram = engine::shared.pointShaderID;
                 floorSegments[i]->addTag("floor");
