@@ -25,6 +25,7 @@ class aiScript : public baseScript
         int iteration = 0;
 
         bool evaluating = false;
+        bool renderAll = false;
 
         std::string serializeNetwork(const NEAT::genome& g) 
         {
@@ -64,6 +65,7 @@ class aiScript : public baseScript
                 landers[i]->addScript<aiLanderScript>();
                 ((aiLanderScript*)landers[i]->scripts[0])->goal = (goalScript*)goal->scripts[0];
                 aiLanderScript* landerScript = (aiLanderScript*)landers[i]->scripts[0];
+                if(!renderAll) landers[i]->polygonInstance.shouldRender = population.genomes[i].isChampion;
                 landerScript->preUpdate();
                 landerScript->genome = &population.genomes[i];
                 landerScript->population = &population;    
@@ -72,7 +74,7 @@ class aiScript : public baseScript
 
         void reproduce()
         {
-            delete goal;
+            delete goal;    
             for(int i = 0; i < population.populationSize; i++) delete landers[i];
             landers.clear();
             population.speciate();
@@ -95,6 +97,7 @@ class aiScript : public baseScript
                 bool aliveLander = false;
                 float bestScore = FLT_MIN, worstScore = FLT_MAX;
                 int bestId = 0;
+                std::unordered_map<int, int> speciesRenderCount;
                 for(int i = 0; i < population.populationSize; i++)
                 {
                     aiLanderScript* landerScript = (aiLanderScript*)landers[i]->scripts[0];
@@ -105,6 +108,22 @@ class aiScript : public baseScript
                     }
                     worstScore = std::min(worstScore, landerScript->score);
                     if(!landerScript->dead) aliveLander = true;
+                    if(!renderAll) 
+                    {
+                        int sID = population.genomes[i].speciesId; 
+                        if(!population.genomes[i].isChampion)
+                        {
+                            if (speciesRenderCount[sID] < 2) 
+                            {
+                                landers[i]->polygonInstance.shouldRender = true;
+                                speciesRenderCount[sID]++; 
+                            } 
+                            else 
+                            {
+                                landers[i]->polygonInstance.shouldRender = false;
+                            }
+                        }
+                    }
                 }
                 if(!aliveLander)
                 {

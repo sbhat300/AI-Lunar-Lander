@@ -34,8 +34,8 @@ class aiLanderScript : public baseScript
         };
         goalScript* goal;
         float score;
-        float angleWeight = 300.0f, velocityWeight = 500.0f, xProgressWeight = 1000.0f, yProgressWeight = 500.0f, timePenalty = 0.2f, spinWeight = 30.0f;
-        float successBonus = 3000.0f, failiurePenalty = 1000.0f;
+        float angleWeight = 300.0f, velocityWeight = 500.0f, xProgressWeight = 1000.0f, yProgressWeight = 500.0f, timePenalty = 0.2f, spinWeight = 30.0f, uprightPenalty = 0.4f;
+        float successBonus = 500.0f, failiurePenalty = 1000.0f;
         float timeLimit = 20.0f;
         NEAT::genome* genome = nullptr;
         NEAT* population = nullptr;
@@ -43,6 +43,7 @@ class aiLanderScript : public baseScript
         std::vector<float> inputs;
         float elapsedTime;
         float startXDist, startYDist, lastXDist, lastYDist;
+        int speciesId;
 
         ray down, left, right; 
 
@@ -63,7 +64,20 @@ class aiLanderScript : public baseScript
                 score += angleWeight * orientationMatch;
                 score -= spinWeight * spin * spin;
 
-                if(velocitySq < 400.0f && orientationMatch > 0.9f && std::abs(spin) < 1.5f && goalDist < 60) score += successBonus;
+                if(velocitySq < 1600.0f && orientationMatch > 0.7f && std::abs(spin) < 2.0) 
+                {
+                    score += successBonus * 3;
+
+                    if(goalDist < 120.0f) 
+                    {
+                        score += successBonus * 3;
+
+                        if(velocitySq < 400.0f && orientationMatch  > 0.9f && std::abs(spin) < 1.5f && goalDist < 50.0f)
+                        {
+                            score += successBonus * 6;
+                        }
+                    }
+                }
 
                 parent->rigidbody.velocity = glm::vec2(0.0f, 0.0f);
                 parent->rigidbody.angularVelocity = 0.0f;
@@ -77,12 +91,17 @@ class aiLanderScript : public baseScript
         {
             parent->addTag("lander");
 
+            float r = 0.5f + 0.5f * std::sin(speciesId * 1.3f);
+            float g = 0.5f + 0.5f * std::sin(speciesId * 1.7f + 2.0f);
+            float b = 0.5f + 0.5f * std::sin(speciesId * 2.1f + 4.0f);
+
             score = 0;
+
             parent->addPolygon();
             parent->polygonInstance.initPolygon(4, landerVertices, 6, landerIndices);
             parent->polygonInstance.polygonTexture = textureManager::defaultTexture;
             parent->polygonInstance.shaderProgram = engine::shared.mainShaderID;
-            parent->polygonInstance.setColor(glm::vec3(0.7f, 0.7f, 0.7f));
+            parent->polygonInstance.setColor(glm::vec3(r, g, b));
             parent->addPolygonCollider();
             parent->collider.debugShaderProgram = engine::shared.pointShaderID;
             parent->collider.initPolygon(4, landerCollider);
@@ -171,7 +190,14 @@ class aiLanderScript : public baseScript
                 float yDist = startYDist > 0 ? 1.0f - std::abs(parent->position.y - goal->goal.y) / startYDist : 1;
                 float xReward = (xDist - lastXDist) * xProgressWeight;
                 float yReward = (yDist - lastYDist) * yProgressWeight;
+                
                 score += xReward + yReward - timePenalty;
+
+                float uprightMatch = std::cos(parent->rotation); 
+                if (uprightMatch < 0.5f) 
+                {
+                    score -= uprightPenalty; 
+                }
                 lastXDist = xDist;
                 lastYDist = yDist;
             }
