@@ -1,0 +1,4 @@
+build/
+.venv/
+imgui.ini
+collisionsObjectData.txt
