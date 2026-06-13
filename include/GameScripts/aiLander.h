@@ -64,15 +64,15 @@ class aiLanderScript : public baseScript
                 score += angleWeight * orientationMatch;
                 score -= spinWeight * spin * spin;
 
-                if(velocitySq < 1600.0f && orientationMatch > 0.7f && std::abs(spin) < 2.0) 
+                if(std::sqrt(velocitySq) < 120.0f && orientationMatch > 0.7f && std::abs(spin) < 2.0) 
                 {
                     score += successBonus * 3;
 
                     if(goalDist < 120.0f) 
                     {
-                        score += successBonus * 3;
+                        score += successBonus * 4;
 
-                        if(velocitySq < 400.0f && orientationMatch  > 0.9f && std::abs(spin) < 1.5f && goalDist < 50.0f)
+                        if(std::sqrt(velocitySq) < 60.0f && orientationMatch  > 0.8f && std::abs(spin) < 1.5f && goalDist < 50.0f)
                         {
                             score += successBonus * 6;
                         }
@@ -82,6 +82,7 @@ class aiLanderScript : public baseScript
                 parent->rigidbody.velocity = glm::vec2(0.0f, 0.0f);
                 parent->rigidbody.angularVelocity = 0.0f;
                 parent->collider.collide = false;
+                parent->contain[2] = false;
                 genome->fitness = score;
                 dead = true;
             }
@@ -91,9 +92,6 @@ class aiLanderScript : public baseScript
         {
             parent->addTag("lander");
 
-            float r = 0.5f + 0.5f * std::sin(speciesId * 1.3f);
-            float g = 0.5f + 0.5f * std::sin(speciesId * 1.7f + 2.0f);
-            float b = 0.5f + 0.5f * std::sin(speciesId * 2.1f + 4.0f);
 
             score = 0;
 
@@ -101,7 +99,6 @@ class aiLanderScript : public baseScript
             parent->polygonInstance.initPolygon(4, landerVertices, 6, landerIndices);
             parent->polygonInstance.polygonTexture = textureManager::defaultTexture;
             parent->polygonInstance.shaderProgram = engine::shared.mainShaderID;
-            parent->polygonInstance.setColor(glm::vec3(r, g, b));
             parent->addPolygonCollider();
             parent->collider.debugShaderProgram = engine::shared.pointShaderID;
             parent->collider.initPolygon(4, landerCollider);
@@ -133,6 +130,10 @@ class aiLanderScript : public baseScript
             startYDist = std::abs(parent->position.y - goal->goal.y);
             lastXDist = 0;
             lastYDist = 0;
+            float r = 0.5f + 0.5f * std::sin(speciesId * 1.3f);
+            float g = 0.5f + 0.5f * std::sin(speciesId * 1.7f + 2.0f);
+            float b = 0.5f + 0.5f * std::sin(speciesId * 2.1f + 4.0f);
+            parent->polygonInstance.setColor(glm::vec3(r, g, b));
         }
 
         void update() override

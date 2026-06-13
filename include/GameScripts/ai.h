@@ -59,6 +59,7 @@ class aiScript : public baseScript
             goal->addScript<goalScript>(); 
 
             landers.resize(population.populationSize);
+            std::unordered_set<int> uniqueSpecies;
             for(int i = 0; i < population.populationSize; i++)
             {
                 landers[i] = new entity("aiLander", glm::vec2(distr(gen), 300), glm::vec2(50, 50), 0);
@@ -66,10 +67,13 @@ class aiScript : public baseScript
                 ((aiLanderScript*)landers[i]->scripts[0])->goal = (goalScript*)goal->scripts[0];
                 aiLanderScript* landerScript = (aiLanderScript*)landers[i]->scripts[0];
                 if(!renderAll) landers[i]->polygonInstance.shouldRender = population.genomes[i].isChampion;
-                landerScript->preUpdate();
                 landerScript->genome = &population.genomes[i];
                 landerScript->population = &population;    
+                landerScript->speciesId = population.genomes[i].speciesId;
+                uniqueSpecies.insert(population.genomes[i].speciesId);
+                landerScript->preUpdate();
             }
+            std::cout << "NUMBER OF SPECIES: " << uniqueSpecies.size() << std::endl;
         }
 
         void reproduce()
@@ -87,6 +91,7 @@ class aiScript : public baseScript
         {
             gen = std::mt19937(rd());
             distr = std::uniform_real_distribution<float>(-340, 340);
+            population.minNGenes = 30;
             initialize();
         }
 
